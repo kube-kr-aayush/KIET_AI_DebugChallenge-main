@@ -1,0 +1,77 @@
+Bug 2 → 
+Crash immediately: vocabulary is empty since all text tokens are letters, never digits
+
+
+Problem - 
+The preprocessing step filters tokens using:
+
+   return [lemmatizer.lemmatize(tok) for tok in tokens if tok.isdigit()]
+This keeps only numeric tokens, while the dataset mainly contains words.
+As a result, the vocabulary becomes empty and the model crashes.
+
+Solution -
+    return [lemmatizer.lemmatize(tok) for tok in tokens if tok.isalpha()]
+The tokenizer was incorrectly filtering only digits, removing all meaningful words.
+Replacing isdigit() with isalpha() ensures proper text tokens are retained, fixing the empty vocabulary issue.
+
+
+
+
+Bug 3 + 4 → 
+
+Training Failure (Loss Not Decreasing)
+
+Problem 1 (Incorrect One-Hot Encoding)
+vec[idx] = 0.0
+
+This creates zero vectors instead of valid one-hot vectors.
+
+Solution->
+vec[idx] = 1.0
+
+
+Problem 2 (Incorrect Gradient Calculation)
+dtanh = (1.0 + self._hs[t + 1] ** 2) * d_h
+
+The derivative of the tanh function is incorrect.
+
+Solution->
+dtanh = (1.0 - self._hs[t + 1] ** 2) * d_h
+The model failed to learn due to:
+
+Incorrect one-hot encoding (inputs were invalid)
+Wrong gradient calculation for tanh activation
+
+Fixing both allowed proper gradient flow and successful training.
+
+Bug 5 → 
+
+Bot Always Says “I Don't Understand”
+
+Problem
+CONFIDENCE_THRESHOLD = 0.95
+
+This threshold is too high, so predictions are almost always rejected.
+
+Solution
+CONFIDENCE_THRESHOLD = 0.3    or 0.4
+Real-world confidence scores are usually lower.
+Reducing the threshold allows the model to accept valid predictions.
+
+Bug 1 → 
+Bot Still Refuses Responses
+
+
+Problem
+
+Even after fixing other bugs, the condition:
+
+if confidence < CONFIDENCE_THRESHOLD:
+
+still blocks responses due to improper threshold tuning.
+
+Fix
+Ensure threshold is set correctly (0.3–0.5)
+Ensure model is properly trained
+The issue was due to strict confidence filtering.
+After adjusting the threshold and fixing training issues, the chatbot responds correctly.
